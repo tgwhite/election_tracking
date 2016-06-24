@@ -25,7 +25,44 @@ all_primary_results_by_county_upd <-
     percentage = str_replace_all(percentage, pattern = "%", replacement = "") %>% as.numeric(),
     county_clean = str_replace_all(county, pattern = 'County', replacement = '') %>% str_trim() %>% tolower(),
     state_clean = str_replace_all(state, pattern = '-', replacement = " ") %>% tolower()
-  )
+  ) 
+
+
+sanders_trump = str_subset(unique(all_primary_results_by_county_upd$candidate) %>% tolower(), 'sanders|trump') %>% sort()
+
+## sanders vs trump by county ## 
+sanders_trump_results <- 
+  all_primary_results_by_county_upd %>%
+  mutate(
+    candidate = tolower(candidate)
+  ) %>%
+  filter(
+    candidate %in% sanders_trump
+  ) %>%
+  dcast(county_clean + state_clean ~ candidate, value.var = 'percentage') 
+
+setnames(sanders_trump_results, c('b. sanders', "d. trump"), c('sanders', 'trump'))
+
+ggplot(sanders_trump_results, aes(trump, sanders, colour = state_clean)) + 
+  geom_point() +
+  stat_smooth(data = sanders_trump_results, colour = 'black') +
+  stat_smooth(data = sanders_trump_results, method = 'lm', colour = 'blue')
+
+
+dem_primary_results_plot <- ggplot(sanders_trump_results, aes(long, lat, group = group, fill = percentage )) +
+  geom_polygon() +
+  facet_wrap(~candidate, ncol = 1) + 
+  geom_path(colour = 'white') +
+  theme(
+    text = element_text(family = 'Garamond', face = 'bold'),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    plot.title = element_text(size = 14)
+  ) 
+
+# plot all results # 
+
+unique(sanders_trump_results$candidate)
 
 # get geographic data by county
 
